@@ -1,0 +1,21 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - models_data:/app/ai_models
+    environment:
+      - AI_MODELS_DIR=/app/ai_models
+      - HF_TOKEN=${HF_TOKEN:-}
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: on-failure
+
+volumes:
+  models_data:
