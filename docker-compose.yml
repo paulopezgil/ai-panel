@@ -2,20 +2,24 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
-      - models_data:/app/ai_models
+      - ${AI_MODELS_DIR:-./models}:/app/ai_models
     environment:
       - AI_MODELS_DIR=/app/ai_models
       - HF_TOKEN=${HF_TOKEN:-}
+    networks:
+      - ai-panel-net
 
   frontend:
     build: ./frontend
     ports:
-      - "80:80"
+      - "3000:80"
     depends_on:
       - backend
     restart: on-failure
+    networks:
+      - ai-panel-net
 
-volumes:
-  models_data:
+networks:
+  ai-panel-net:
