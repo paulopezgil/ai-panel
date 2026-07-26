@@ -5,6 +5,8 @@ services:
       args:
         LLAMA_PIP_EXTRA_INDEX: ${LLAMA_PIP_EXTRA_INDEX:-https://abetlen.github.io/llama-cpp-python/whl/cpu}
         LLAMA_CMAKE_ARGS: ${LLAMA_CMAKE_ARGS:-}
+    devices:
+      - /dev/dri:/dev/dri
     ports:
       - "${HOST_PORT:-8501}:8501"
     volumes:
