@@ -48,14 +48,11 @@ def format_bytes(b: int) -> str:
 
 
 def _download_worker(repo_id: str, filename: str, q: queue.Queue) -> None:
-    last_pct = [-1]
     model_service = ModelService()
+    q.put(("status", "Starting download…", 0))
 
     def progress_callback(current: int, total: int) -> None:
-        pct = int(current / total * 100) if total else 0
-        if pct != last_pct[0]:
-            last_pct[0] = pct
-            q.put(("progress", current, total))
+        q.put(("progress", current, total))
 
     try:
         path = model_service.download_ai_model(
@@ -161,9 +158,10 @@ with tab_download:
                 while True:
                     msg = q.get_nowait()
                     if msg[0] == "progress":
-                        current, total = msg[1], msg[2]
-                        st.session_state.dl_current = current
-                        st.session_state.dl_total = total
+                        st.session_state.dl_current = msg[1]
+                        st.session_state.dl_total = msg[2]
+                    elif msg[0] == "status":
+                        st.session_state.dl_status = msg[1]
                     elif msg[0] == "done":
                         st.session_state.downloading = False
                         st.session_state.dl_path = msg[1]
@@ -182,8 +180,8 @@ with tab_download:
                 f"{current / 1024 / 1024:.0f} MB / {total / 1024 / 1024:.0f} MB"
             )
         else:
-            st.progress(0)
-            st.caption("Downloading… (size unknown)")
+            status = st.session_state.get("dl_status", "Downloading…")
+            st.caption(status)
 
         if st.session_state.get("dl_done"):
             st.success("Download complete!")
