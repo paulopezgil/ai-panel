@@ -1,25 +1,15 @@
 services:
-  backend:
-    build: ./backend
+  app:
+    build: .
     ports:
-      - "8001:8000"
+      - "${HOST_PORT:-8501}:8501"
     volumes:
       - ${AI_MODELS_DIR:-./models}:/app/ai_models
     environment:
       - AI_MODELS_DIR=/app/ai_models
       - HF_TOKEN=${HF_TOKEN:-}
-    networks:
-      - ai-panel-net
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
-    restart: on-failure
-    networks:
-      - ai-panel-net
-
-networks:
-  ai-panel-net:
+      - LLAMA_SERVER_PORT=${LLAMA_SERVER_PORT:-8001}
+      - LLAMA_N_CTX=${LLAMA_N_CTX:-2048}
+      - LLAMA_N_GPU_LAYERS=${LLAMA_N_GPU_LAYERS:--1}
+      - LLAMA_N_THREADS=${LLAMA_N_THREADS:-4}
+      - LLAMA_SEED=${LLAMA_SEED:--1}
