@@ -2,9 +2,11 @@ import logging
 import os
 import signal
 import subprocess
+import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Callable
 
 
 logger = logging.getLogger(__name__)
@@ -37,6 +39,7 @@ class ProcessManager:
         n_gpu_layers: int = -1,
         n_ctx: int = 2048,
         port: int = 8001,
+        line_callback: Callable[[str], None] | None = None,
     ) -> ServerInstance:
         if self._instance is not None and self._instance.is_running:
             logger.info("Server already running, stopping it first.")
@@ -56,7 +59,8 @@ class ProcessManager:
         proc = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            bufsize=1,
             start_new_session=True,
         )
 
@@ -65,6 +69,18 @@ class ProcessManager:
             model_name=model_name,
             port=port,
         )
+
+        if line_callback:
+            def _reader() -> None:
+                assert proc.stdout is not None
+                for raw in iter(proc.stdout.readline, b""):
+                    line = raw.decode("utf-8", errors="replace").rstrip()
+                    if line:
+                        line_callback(line)
+                proc.stdout.close()
+
+            threading.Thread(target=_reader, daemon=True).start()
+
         logger.info(f"Server started (PID={proc.pid}, port={port})")
         return self._instance
 

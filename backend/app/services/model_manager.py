@@ -3,7 +3,9 @@ import logging
 import os
 from pathlib import Path
 from typing import Any
-from huggingface_hub import hf_hub_download
+
+import requests
+from huggingface_hub import hf_hub_url
 
 
 logger = logging.getLogger(__name__)
@@ -23,6 +25,7 @@ class ModelService:
         self,
         repo_id: str,
         filename: str,
+        progress_callback: Any = None,
     ) -> str:
 
         def _get_hf_token() -> str:
@@ -31,14 +34,30 @@ class ModelService:
                 logger.warning("HF_TOKEN is not set, download speed may be slow and you may hit rate limits.")
             return token
 
+        token = _get_hf_token()
+        url = hf_hub_url(repo_id=repo_id, filename=filename)
+        headers = {}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
         logger.info(f"Downloading '{filename}' from '{repo_id}'...")
-        local_path = hf_hub_download(
-            repo_id=repo_id,
-            filename=filename,
-            local_dir=str(self._get_ai_models_dir_path()),
-            local_dir_use_symlinks=False,
-            token=_get_hf_token(),
-        )
+        response = requests.get(url, stream=True, headers=headers)
+        response.raise_for_status()
+
+        total = int(response.headers.get("content-length", 0))
+        destination = self._get_ai_models_dir_path() / filename
+        temp_path = destination.with_suffix(".part")
+
+        current = 0
+        with open(temp_path, "wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+                current += len(chunk)
+                if progress_callback:
+                    progress_callback(current, total)
+
+        temp_path.rename(destination)
+        local_path = str(destination)
         logger.info(f"AI model downloaded to '{local_path}'")
         return local_path
 
