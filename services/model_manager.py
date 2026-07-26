@@ -4,8 +4,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-import requests
-from huggingface_hub import hf_hub_url
+from huggingface_hub import hf_hub_download
 
 
 logger = logging.getLogger(__name__)
@@ -35,30 +34,15 @@ class ModelService:
             return token
 
         token = _get_hf_token()
-        url = hf_hub_url(repo_id=repo_id, filename=filename)
-        headers = {}
-        if token:
-            headers["Authorization"] = f"Bearer {token}"
-
         logger.info(f"Downloading '{filename}' from '{repo_id}'...")
-        response = requests.get(url, stream=True, headers=headers, timeout=30)
-        response.raise_for_status()
-
-        total = int(response.headers.get("content-length", 0))
-        destination = self._get_ai_models_dir_path() / filename
-        temp_path = destination.with_suffix(".part")
-
-        current = 0
-        CHUNK_SIZE = 1024 * 1024
-        with open(temp_path, "wb") as f:
-            for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
-                f.write(chunk)
-                current += len(chunk)
-                if progress_callback:
-                    progress_callback(current, total)
-
-        temp_path.rename(destination)
-        local_path = str(destination)
+        local_path = hf_hub_download(
+            repo_id=repo_id,
+            filename=filename,
+            local_dir=str(self._get_ai_models_dir_path()),
+            local_dir_use_symlinks=False,
+            resume_download=True,
+            token=token or None,
+        )
         logger.info(f"AI model downloaded to '{local_path}'")
         return local_path
 

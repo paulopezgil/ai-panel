@@ -1,5 +1,6 @@
 import os
 import queue
+import sys
 import threading
 import time
 from datetime import datetime, timezone
@@ -47,22 +48,33 @@ def format_bytes(b: int) -> str:
     return f"{val:.1f} {units[i]}"
 
 
+class _StderrCapture:
+    def __init__(self, q: queue.Queue) -> None:
+        self.q = q
+    def write(self, text: str) -> None:
+        for part in text.split("\r"):
+            stripped = part.strip()
+            if stripped:
+                self.q.put(("line", stripped))
+    def flush(self) -> None:
+        pass
+
+
 def _download_worker(repo_id: str, filename: str, q: queue.Queue) -> None:
-    model_service = ModelService()
-    q.put(("status", "Starting download…", 0))
-
-    def progress_callback(current: int, total: int) -> None:
-        q.put(("progress", current, total))
-
+    capture = _StderrCapture(q)
+    old_stderr = sys.stderr
+    sys.stderr = capture
     try:
+        model_service = ModelService()
         path = model_service.download_ai_model(
             repo_id=repo_id,
             filename=filename,
-            progress_callback=progress_callback,
         )
-        q.put(("done", path, 0))
+        q.put(("done", path))
     except Exception as e:
-        q.put(("error", str(e), 0))
+        q.put(("error", str(e)))
+    finally:
+        sys.stderr = old_stderr
 
 
 def start_server_subprocess(model_name: str, n_gpu_layers: int, n_ctx: int, port: int) -> None:
@@ -157,11 +169,8 @@ with tab_download:
             try:
                 while True:
                     msg = q.get_nowait()
-                    if msg[0] == "progress":
-                        st.session_state.dl_current = msg[1]
-                        st.session_state.dl_total = msg[2]
-                    elif msg[0] == "status":
-                        st.session_state.dl_status = msg[1]
+                    if msg[0] == "line":
+                        st.session_state.dl_line = msg[1]
                     elif msg[0] == "done":
                         st.session_state.downloading = False
                         st.session_state.dl_path = msg[1]
@@ -172,21 +181,16 @@ with tab_download:
             except queue.Empty:
                 pass
 
-        current = st.session_state.get("dl_current", 0)
-        total = st.session_state.get("dl_total", 0)
-        if total > 0:
-            st.progress(min(current / total, 1.0))
-            st.caption(
-                f"{current / 1024 / 1024:.0f} MB / {total / 1024 / 1024:.0f} MB"
-            )
+        dl_line = st.session_state.get("dl_line", "")
+        if dl_line:
+            st.code(dl_line)
         else:
-            status = st.session_state.get("dl_status", "Downloading…")
-            st.caption(status)
+            st.caption("Downloading…")
 
         if st.session_state.get("dl_done"):
             st.success("Download complete!")
-            for k in ["dl_current", "dl_total", "dl_done", "dl_error", "dl_path"]:
-                st.session_state.pop(k, None)
+            st.session_state.pop("dl_done", None)
+            st.session_state.pop("dl_path", None)
         elif st.session_state.get("dl_error"):
             st.error(st.session_state.dl_error)
             st.session_state.pop("dl_error", None)
