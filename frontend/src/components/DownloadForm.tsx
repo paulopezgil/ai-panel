@@ -25,7 +25,7 @@ export default function DownloadForm({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-xl font-semibold text-gray-800">Download Model</h2>
+      <h2 className="text-lg font-semibold text-zinc-100">Download Model</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <input
           type="text"
@@ -33,7 +33,7 @@ export default function DownloadForm({ onSuccess }: { onSuccess: () => void }) {
           value={repoId}
           onChange={(e) => setRepoId(e.target.value)}
           required
-          className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          className="bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
         />
         <input
           type="text"
@@ -41,14 +41,14 @@ export default function DownloadForm({ onSuccess }: { onSuccess: () => void }) {
           value={filename}
           onChange={(e) => setFilename(e.target.value)}
           required
-          className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          className="bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
         />
       </div>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+      {error && <p className="text-red-400 text-sm">{error}</p>}
       <button
         type="submit"
         disabled={loading}
-        className="bg-indigo-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+        className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-500 disabled:opacity-50 transition-colors"
       >
         {loading ? 'Downloading…' : 'Download'}
       </button>
