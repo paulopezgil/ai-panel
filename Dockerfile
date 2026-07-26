@@ -2,10 +2,6 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libvulkan1 mesa-vulkan-drivers \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -13,9 +9,14 @@ ARG LLAMA_PIP_EXTRA_INDEX=""
 ARG LLAMA_CMAKE_ARGS=""
 
 RUN if [ -n "$LLAMA_CMAKE_ARGS" ]; then \
-        apt-get update && apt-get install -y --no-install-recommends build-essential && rm -rf /var/lib/apt/lists/* && \
+        pkgs="build-essential"; \
+        if echo "$LLAMA_CMAKE_ARGS" | grep -qi vulkan; then pkgs="$pkgs libvulkan1 mesa-vulkan-drivers"; fi && \
+        apt-get update && apt-get install -y --no-install-recommends $pkgs && rm -rf /var/lib/apt/lists/* && \
         CMAKE_ARGS="$LLAMA_CMAKE_ARGS" pip install --no-cache-dir llama-cpp-python; \
     elif [ -n "$LLAMA_PIP_EXTRA_INDEX" ]; then \
+        if echo "$LLAMA_PIP_EXTRA_INDEX" | grep -qi vulkan; then \
+            apt-get update && apt-get install -y --no-install-recommends libvulkan1 mesa-vulkan-drivers && rm -rf /var/lib/apt/lists/*; \
+        fi && \
         pip install --no-cache-dir llama-cpp-python --extra-index-url "$LLAMA_PIP_EXTRA_INDEX"; \
     else \
         pip install --no-cache-dir llama-cpp-python; \
