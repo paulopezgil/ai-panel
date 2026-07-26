@@ -23,7 +23,8 @@ RUN if [ -n "$LLAMA_CMAKE_ARGS" ]; then \
         pip install --no-cache-dir llama-cpp-python; \
     fi
 
-COPY app.py services/ ./
+COPY app.py .
+COPY services/ services/
 
 EXPOSE 8501
 
