@@ -41,7 +41,7 @@ class ModelService:
             headers["Authorization"] = f"Bearer {token}"
 
         logger.info(f"Downloading '{filename}' from '{repo_id}'...")
-        response = requests.get(url, stream=True, headers=headers)
+        response = requests.get(url, stream=True, headers=headers, timeout=30)
         response.raise_for_status()
 
         total = int(response.headers.get("content-length", 0))
@@ -49,8 +49,9 @@ class ModelService:
         temp_path = destination.with_suffix(".part")
 
         current = 0
+        CHUNK_SIZE = 1024 * 1024
         with open(temp_path, "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
+            for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
                 f.write(chunk)
                 current += len(chunk)
                 if progress_callback:

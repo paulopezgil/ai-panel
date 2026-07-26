@@ -176,11 +176,14 @@ with tab_download:
 
         current = st.session_state.get("dl_current", 0)
         total = st.session_state.get("dl_total", 0)
-        pct = current / total if total > 0 else 0
-        st.progress(pct)
-        st.caption(
-            f"{current / 1024 / 1024:.0f} MB / {total / 1024 / 1024:.0f} MB"
-        )
+        if total > 0:
+            st.progress(min(current / total, 1.0))
+            st.caption(
+                f"{current / 1024 / 1024:.0f} MB / {total / 1024 / 1024:.0f} MB"
+            )
+        else:
+            st.progress(0)
+            st.caption("Downloading… (size unknown)")
 
         if st.session_state.get("dl_done"):
             st.success("Download complete!")
