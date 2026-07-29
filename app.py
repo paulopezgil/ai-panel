@@ -220,38 +220,43 @@ with tab_models:
         ]
         st.dataframe(rows, use_container_width=True, hide_index=True)
 
-        st.divider()
-        st.subheader("Start Model Server")
-
-        model_names = [m["name"] for m in models]
-        selected = st.selectbox("Select model", model_names, key="run_model_select")
-
-        col1, col2 = st.columns(2)
-        with col1:
-            ngl = st.number_input(
-                "n_gpu_layers",
-                value=LLAMA_N_GPU_LAYERS,
-                min_value=-1,
-                key="ngl_input",
-            )
-        with col2:
-            nctx = st.selectbox(
-                "n_ctx (context length)",
-                options=[2048, 4096, 8192],
-                index=0 if LLAMA_N_CTX == 2048 else (
-                    1 if LLAMA_N_CTX == 4096 else 2
-                ),
-                key="nctx_input",
-            )
-
-        run_disabled = server_running
-        if st.button("Start Server", disabled=run_disabled, type="primary"):
-            start_server_subprocess(selected, ngl, nctx, LLAMA_SERVER_PORT)
-            st.rerun()
-
 # -------- TAB: Server --------
 with tab_server:
     st.subheader("Server Control")
+
+    if not server_running:
+        model_service = st.session_state.model_service
+        models = model_service.list_models_with_metadata()
+
+        if models:
+            st.subheader("Start Model Server")
+
+            model_names = [m["name"] for m in models]
+            selected = st.selectbox("Select model", model_names, key="run_model_select")
+
+            col1, col2 = st.columns(2)
+            with col1:
+                ngl = st.number_input(
+                    "n_gpu_layers",
+                    value=LLAMA_N_GPU_LAYERS,
+                    min_value=-1,
+                    key="ngl_input",
+                )
+            with col2:
+                nctx = st.selectbox(
+                    "n_ctx (context length)",
+                    options=[2048, 4096, 8192],
+                    index=0 if LLAMA_N_CTX == 2048 else (
+                        1 if LLAMA_N_CTX == 4096 else 2
+                    ),
+                    key="nctx_input",
+                )
+
+            if st.button("Start Server", type="primary"):
+                start_server_subprocess(selected, ngl, nctx, LLAMA_SERVER_PORT)
+                st.rerun()
+
+    st.divider()
 
     col1, col2, col3 = st.columns(3)
     with col1:
