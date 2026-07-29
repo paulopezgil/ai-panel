@@ -9,8 +9,8 @@ from pathlib import Path
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
-from services.model_manager import ModelService
-from services.process_manager import process_manager
+from utils.model_manager import ModelService
+from utils.process_manager import process_manager
 
 
 AI_MODELS_DIR = os.getenv("AI_MODELS_DIR", "ai_models")

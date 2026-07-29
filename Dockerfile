@@ -24,7 +24,7 @@ RUN if [ -n "$LLAMA_CMAKE_ARGS" ]; then \
     fi
 
 COPY app.py .
-COPY services/ services/
+COPY utils/ utils/
 
 EXPOSE 8501
 
