@@ -7,6 +7,7 @@ services:
         LLAMA_CMAKE_ARGS: ${LLAMA_CMAKE_ARGS:-}
     ports:
       - "${HOST_PORT:-8501}:8501"
+      - "${LLAMA_SERVER_PORT:-8001}:8001"
     volumes:
       - ${AI_MODELS_DIR:-./models}:/app/ai_models
     environment:
